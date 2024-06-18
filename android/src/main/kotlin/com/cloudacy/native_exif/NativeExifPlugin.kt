@@ -1,12 +1,19 @@
 package com.cloudacy.native_exif
 
+import android.os.Build
 import androidx.exifinterface.media.ExifInterface
 import androidx.annotation.NonNull
+import androidx.exifinterface.media.ExifInterface.TAG_GPS_DEST_DISTANCE
+import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION
+import androidx.exifinterface.media.ExifInterface.TAG_GPS_SPEED
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+
+import java.util.concurrent.TimeUnit
+import java.nio.file.Files.setAttribute
 import kotlin.math.absoluteValue
 
 /** NativeExifPlugin */
@@ -149,6 +156,7 @@ class NativeExifPlugin : FlutterPlugin, MethodCallHandler {
 
                 val attributeMap = HashMap<String, Any>()
 
+               
                 for (tag in tags)
                     exif.getAttribute(tag)?.let { attributeMap[tag] = it }
 
@@ -201,6 +209,28 @@ class NativeExifPlugin : FlutterPlugin, MethodCallHandler {
                 }
 
                 setAttributes(exif, values)
+
+
+                if ((values as Map<String, Any>).containsKey(TAG_GPS_SPEED)) {
+                    exif.setAttribute(
+                        TAG_GPS_SPEED,
+                        Rational(values[TAG_GPS_SPEED].toString().toDouble() * TimeUnit.HOURS.toSeconds(1) / 1000).toString()
+                    )
+                }
+                if ((values as Map<String, Any>).containsKey(TAG_GPS_IMG_DIRECTION)) {
+                    exif.setAttribute(
+                        TAG_GPS_IMG_DIRECTION,
+                        Rational(values[TAG_GPS_IMG_DIRECTION].toString().toDouble()).toString(),
+                    )
+                }
+                if ((values as Map<String, Any>).containsKey(TAG_GPS_DEST_DISTANCE)) {
+                    exif.setAttribute(
+                        TAG_GPS_DEST_DISTANCE,
+                        Rational(values[TAG_GPS_DEST_DISTANCE].toString().toDouble()).toString(),
+                    )
+                }
+
+
                 exif.saveAttributes()
 
                 result.success(null)
@@ -223,9 +253,42 @@ class NativeExifPlugin : FlutterPlugin, MethodCallHandler {
                 result.notImplemented()
             }
         }
+
+
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+    }
+
+
+    private class Rational constructor(numerator: Long, denominator: Long) {
+        val numerator: Long
+        val denominator: Long
+
+        constructor(value: Float) : this((value * 10000).toLong(), 10000)
+
+        constructor(value: Double) : this((value * 10000).toLong(), 10000)
+
+        constructor(value: Long) : this((value * 10000), 10000)
+
+        override fun toString(): String {
+            return "$numerator/$denominator"
+        }
+
+        fun calculate(): Double {
+            return numerator.toDouble() / denominator
+        }
+
+        init {
+            // Handle erroneous case
+            if (denominator == 0L) {
+                this.numerator = 0
+                this.denominator = 1
+            } else {
+                this.numerator = numerator
+                this.denominator = denominator
+            }
+        }
     }
 }
