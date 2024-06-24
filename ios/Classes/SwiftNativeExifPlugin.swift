@@ -80,6 +80,9 @@ public class SwiftNativeExifPlugin: NSObject, FlutterPlugin {
     if metadata[kCGImagePropertyExifDictionary as String] != nil {
       exif.addEntries(from: metadata[kCGImagePropertyExifDictionary as String] as! [AnyHashable : Any])
     }
+    if metadata[kCGImagePropertyTIFFDictionary as String] != nil {
+      exif.addEntries(from: metadata[kCGImagePropertyTIFFDictionary as String] as! [AnyHashable : Any])
+    }
     
     if metadata[kCGImagePropertyGPSDictionary as String] != nil {
       for property in metadata[kCGImagePropertyGPSDictionary as String] as! [String : Any] {
@@ -118,21 +121,34 @@ public class SwiftNativeExifPlugin: NSObject, FlutterPlugin {
     }
     
     var exif = ((metadata[kCGImagePropertyExifDictionary as String] as? NSDictionary)?.mutableCopy() ?? [String : AnyObject]()) as! [String : AnyObject]
+    var tiff = ((metadata[kCGImagePropertyTIFFDictionary as String] as? NSDictionary)?.mutableCopy() ?? [String : AnyObject]()) as! [String : AnyObject]
     var gps = ((metadata[kCGImagePropertyGPSDictionary as String] as? NSDictionary)?.mutableCopy() ?? [String : AnyObject]()) as! [String : AnyObject]
     
     for value in attributes {
       if value.key == "Orientation" {
         metadata[kCGImagePropertyOrientation as String] = value.value as AnyObject
-      } else if value.key.hasPrefix("GPS") {
+      } else
+      if value.key == "Artist" {
+        tiff[kCGImagePropertyTIFFArtist as String] = value.value as AnyObject
+      } else 
+      if value.key == "Software" {
+        tiff[kCGImagePropertyTIFFSoftware as String] = value.value as AnyObject
+        } else  
+      if value.key == "SubSecTime" {
+        exif[kCGImagePropertyExifSubsecTime as String] = value.value
+        exif[kCGImagePropertyExifSubsecTimeDigitized as String] = value.value
+        } else
+      if value.key.hasPrefix("GPS") {
         let tag = String(value.key.dropFirst(3))
         gps[tag] = value.value
-      } else {
+      } else { 
         exif[value.key] = value.value
       }
-    }
-    
+    } 
+      
     metadata[kCGImagePropertyExifDictionary as String] = exif as AnyObject
     metadata[kCGImagePropertyGPSDictionary as String] = gps as AnyObject
+    metadata[kCGImagePropertyTIFFDictionary as String] = tiff as AnyObject
     
     CGImageDestinationAddImageFromSource(destination, source, 0, metadata as CFDictionary)
     guard CGImageDestinationFinalize(destination) else {
