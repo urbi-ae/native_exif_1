@@ -79,6 +79,15 @@ public class SwiftNativeExifPlugin: NSObject, FlutterPlugin {
     
     if metadata[kCGImagePropertyExifDictionary as String] != nil {
       exif.addEntries(from: metadata[kCGImagePropertyExifDictionary as String] as! [AnyHashable : Any])
+
+      if let focalPlaneXResolution = metadata[kCGImagePropertyExifFocalPlaneXResolution as String] {
+            exif["FocalPlaneXResolution"] = focalPlaneXResolution
+        }
+        
+        if let focalPlaneYResolution = metadata[kCGImagePropertyExifFocalPlaneYResolution as String] {
+            exif["FocalPlaneYResolution"] = focalPlaneYResolution
+        }
+
     }
     if metadata[kCGImagePropertyTIFFDictionary as String] != nil {
       exif.addEntries(from: metadata[kCGImagePropertyTIFFDictionary as String] as! [AnyHashable : Any])
@@ -89,7 +98,6 @@ public class SwiftNativeExifPlugin: NSObject, FlutterPlugin {
         exif["GPS" + property.key] = property.value
       }
     }
-    
     return exif
   }
   
@@ -137,6 +145,10 @@ public class SwiftNativeExifPlugin: NSObject, FlutterPlugin {
       if value.key == "SubSecTime" {
         exif[kCGImagePropertyExifSubsecTime as String] = value.value
         exif[kCGImagePropertyExifSubsecTimeDigitized as String] = value.value
+        }else  if value.key == "FocalPlaneYResolution" {
+        exif[kCGImagePropertyExifFocalPlaneYResolution as String] = value.value 
+        } else if value.key == "FocalPlaneXResolution" {
+        exif[kCGImagePropertyExifFocalPlaneXResolution as String] = value.value 
         } else
       if value.key.hasPrefix("GPS") {
         let tag = String(value.key.dropFirst(3))
