@@ -3,6 +3,7 @@ package com.cloudacy.native_exif
 import android.os.Build
 import androidx.exifinterface.media.ExifInterface
 import androidx.annotation.NonNull
+import androidx.exifinterface.media.ExifInterface.TAG_FOCAL_PLANE_X_RESOLUTION
 import androidx.exifinterface.media.ExifInterface.TAG_GPS_DEST_DISTANCE
 import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION
 import androidx.exifinterface.media.ExifInterface.TAG_GPS_SPEED
@@ -157,8 +158,8 @@ class NativeExifPlugin : FlutterPlugin, MethodCallHandler {
                 )
 
                 val attributeMap = HashMap<String, Any>()
+                
 
-               
                 for (tag in tags)
                     exif.getAttribute(tag)?.let { attributeMap[tag] = it }
 
@@ -213,10 +214,38 @@ class NativeExifPlugin : FlutterPlugin, MethodCallHandler {
                 setAttributes(exif, values)
 
 
+                if ((values as Map<String, Any>).containsKey(ExifInterface.TAG_FOCAL_LENGTH)) {
+                    exif.setAttribute(
+                        ExifInterface.TAG_FOCAL_LENGTH,
+                        Rational(
+                            values[ExifInterface.TAG_FOCAL_LENGTH].toString().toDouble()
+                        ).toString()
+                    )
+                }
+                if ((values as Map<String, Any>).containsKey(ExifInterface.TAG_FOCAL_PLANE_Y_RESOLUTION)) {
+                    exif.setAttribute(
+                        ExifInterface.TAG_FOCAL_PLANE_Y_RESOLUTION,
+                        Rational(
+                            values[ExifInterface.TAG_FOCAL_PLANE_Y_RESOLUTION].toString().toDouble()
+                        ).toString()
+                    )
+                }
+                if ((values as Map<String, Any>).containsKey(TAG_FOCAL_PLANE_X_RESOLUTION)) {
+                    exif.setAttribute(
+                        TAG_FOCAL_PLANE_X_RESOLUTION,
+                        Rational(
+                            values[TAG_FOCAL_PLANE_X_RESOLUTION].toString().toDouble()
+                        ).toString()
+
+                    )
+                }
                 if ((values as Map<String, Any>).containsKey(TAG_GPS_SPEED)) {
                     exif.setAttribute(
                         TAG_GPS_SPEED,
-                        Rational(values[TAG_GPS_SPEED].toString().toDouble() * TimeUnit.HOURS.toSeconds(1) / 1000).toString()
+                        Rational(
+                            values[TAG_GPS_SPEED].toString()
+                                .toDouble() * TimeUnit.HOURS.toSeconds(1) / 1000
+                        ).toString()
                     )
                 }
                 if ((values as Map<String, Any>).containsKey(TAG_GPS_IMG_DIRECTION)) {
